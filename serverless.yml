@@ -1,15 +1,57 @@
-org: zakarias
-app: ddstream
+# org: zakarias
+# app: ddstream
 service: dynamodb-stream
 
 frameworkVersion: '2'
 
+functions:
+  hello:
+    handler: handler.hello
+    timeout: 900
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - movieTable
+              - StreamArn
 
 provider:
   name: aws
   runtime: python3.8
   lambdaHashingVersion: 20201221
+  stage: dev
+  region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - "dynamodb:*"
+          Resource: '*'
 
-functions:
-  hello:
-    handler: handler.hello
+package:
+  patterns:
+    - '!node_modules/**'
+
+resources:
+  Resources:
+    movieTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: movie
+        AttributeDefinitions:
+          - AttributeName: year
+            AttributeType: N
+          - AttributeName: title
+            AttributeType: S
+        KeySchema:
+          - AttributeName: year
+            KeyType: HASH
+          - AttributeName: title
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 10
+          WriteCapacityUnits: 10
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
