@@ -13,7 +13,10 @@ authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
 
 # Serverless Framework AWS Python Example
 
-This template demonstrates how to deploy a Python function running on AWS Lambda using the traditional Serverless Framework. The deployed function does not include any event definitions as well as any kind of persistence (database). For more advanced configurations check out the [examples repo](https://github.com/serverless/examples/) which includes integrations with SQS, DynamoDB or examples of functions that are triggered in `cron`-like manner. For details about configuration of specific `events`, please refer to our [documentation](https://www.serverless.com/framework/docs/providers/aws/events/).
+This template demonstrates a simple example how to use dynamodb's stream as an event source for lambda.
+The only thing that lambda's function will do is just print the function's event to the log.
+
+
 
 ## Usage
 
@@ -97,3 +100,23 @@ serverless plugin install -n serverless-python-requirements
 ```
 
 Running the above will automatically add `serverless-python-requirements` to `plugins` section in your `serverless.yml` file and add it as a `devDependency` to `package.json` file. The `package.json` file will be automatically created if it doesn't exist beforehand. Now you will be able to add your dependencies to `requirements.txt` file (`Pipfile` and `pyproject.toml` is also supported but requires additional configuration) and they will be automatically injected to Lambda package during build process. For more details about the plugin's configuration, please refer to [official documentation](https://github.com/UnitedIncome/serverless-python-requirements).
+
+
+### INSERT NEW DATA & CHECK IF EVENT SOURCE IS WORKING.
+
+Create new item
+
+```sh
+$ aws dynamodb put-item --table-name movie --item '{"year": {"N": "2007"}, "title": {"S": "Into the wild"}}'
+
+```
+
+Check if the stream is passed to the function
+
+```sh
+$ sls logs -f hello
+
+START RequestId: 3bab9729-526a-4bad-9525-8bc53b5ce05a Version: $LATEST
+[{'eventID': '661666eea049d26e4492ed7be8ea61f9', 'eventName': 'INSERT', 'eventVersion': '1.1', 'eventSource': 'aws:dynamodb', 'awsRegion': 'us-east-1', 'dynamodb': {'ApproximateCreationDateTime': 1627558041.0, 'Keys': {'year': {'N': '2007'}, 'title': {'S': 'Into the wild'}}, 'NewImage': {'year': {'N': '2007'}, 'title': {'S': 'Into the wild'}}, 'SequenceNumber': '100000000013117080622', 'SizeBytes': 50, 'StreamViewType': 'NEW_AND_OLD_IMAGES'}, 'eventSourceARN': 'arn:aws:dynamodb:us-east-1:711434794697:table/movie/stream/2021-07-29T11:23:40.195'}]
+```
+
